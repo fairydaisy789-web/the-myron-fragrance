@@ -1,0 +1,703 @@
+
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Myron</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap">
+<style>
+:root{
+  --accent:#5a3a28; --accent-dark:#3e2619; --bg:#faf6f0; --card:#fffdf9;
+  --text:#2b1d14; --muted:#7a6a5d; --border:#e6dccd; --ok:#16a34a; --danger:#b42318;
+  --display:'Cormorant Garamond',Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1a120d; --card:#241a14; --text:#f3ebe0; --muted:#b3a393; --border:#3a2c22; --accent:#a9744a; --accent-dark:#d3a77f; --danger:#f97066; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1a120d; --card:#241a14; --text:#f3ebe0; --muted:#b3a393; --border:#3a2c22; --accent:#a9744a; --accent-dark:#d3a77f; --danger:#f97066; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg)}
+header{position:sticky; top:env(safe-area-inset-top,0px); z-index:9; background:var(--bg); border-bottom:1px solid var(--border); padding:12px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px))}
+header h1{margin:0 0 8px; font:600 24px/1 var(--display); letter-spacing:.06em; text-align:center}
+nav{display:flex; gap:6px; overflow-x:auto; justify-content:safe center}
+nav button{flex:none; background:transparent; border:1px solid transparent; color:var(--muted); padding:7px 13px; border-radius:20px; font-size:13px; cursor:pointer; white-space:nowrap; font-family:inherit}
+nav button.active{background:var(--accent); color:#fff; font-weight:600}
+main{max-width:960px; margin:0 auto; padding-block:16px 60px; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--accent-dark); outline-offset:2px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; min-width:0}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px}
+.prod .name{font-weight:600; font-size:14px; margin:4px 0 2px}
+.prod .price{color:var(--accent-dark); font-weight:700; font-size:15px}
+.prod .desc{color:var(--muted); font-size:12px; margin:4px 0 8px; min-height:2.4em; white-space:pre-line}
+button.btn{background:var(--accent); color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; width:100%; font-family:inherit}
+button.btn:active{background:var(--accent-dark)}
+button.btn.outline{background:transparent; border:1px solid var(--accent); color:var(--accent)}
+button.btn.danger{background:transparent; border:1px solid var(--danger); color:var(--danger)}
+button.btn.small{width:auto; padding:6px 10px; font-size:12px}
+button.btn:disabled{opacity:.5; cursor:not-allowed}
+input,select,textarea{width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:10px; background:var(--card); color:var(--text); font-family:inherit}
+label{font-size:12px; color:var(--muted); display:block; margin-bottom:4px}
+.row{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.muted{color:var(--muted); font-size:12px}
+.badge{display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap}
+.badge.menunggu_konfirmasi{background:#fef3c7; color:#92400e}
+.badge.dibayar{background:#dbeafe; color:#1e40af}
+.badge.diproses{background:#e0e7ff; color:#3730a3}
+.badge.dikirim{background:#fef9c3; color:#854d0e}
+.badge.diterima{background:#dcfce7; color:#166534}
+.badge.batal{background:#fee2e2; color:#991b1b}
+.empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px}
+.qty{display:flex; align-items:center; gap:8px}
+.qty button{width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:16px; cursor:pointer}
+h3{font-size:15px; margin:0 0 10px}
+.timeline{display:flex; justify-content:space-between; margin:14px 0}
+.tl-step{flex:1; text-align:center; font-size:11px; color:var(--muted)}
+.tl-step .dot{width:20px; height:20px; border-radius:50%; background:var(--border); margin:0 auto 6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff}
+.tl-step.done .dot{background:var(--ok)}
+.tl-step.done{color:var(--text)}
+#toast{position:fixed; bottom:calc(env(safe-area-inset-bottom,0px) + 16px); left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 18px; border-radius:20px; font-size:13px; z-index:50; opacity:0; pointer-events:none; transition:opacity .2s; max-width:calc(100% - 32px); text-align:center}
+#toast.show{opacity:1}
+.small-input{display:flex; gap:6px; margin-bottom:8px}
+.small-input input{margin-bottom:0; min-width:0}
+img.thumb{width:100%; max-width:100%; aspect-ratio:4/5; object-fit:cover; border-radius:8px; margin-bottom:6px; background:var(--border); display:block}
+.hero2{position:relative; border-radius:20px; overflow:hidden; min-height:420px; display:flex; align-items:flex-end; margin-bottom:28px; background:linear-gradient(160deg,#6b4630,#2b1a10)}
+.hero2 img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.hero2::after{content:''; position:absolute; inset:0; background:linear-gradient(to top,rgba(30,17,9,.85),rgba(30,17,9,.15) 70%)}
+.hero2 .in{position:relative; z-index:1; padding:36px 26px; color:#f6ede2; max-width:560px}
+.eyebrow{font-size:11px; letter-spacing:.22em; text-transform:uppercase; margin-bottom:10px; opacity:.8}
+.hero2 h2{font:500 38px/1.1 var(--display); margin:0 0 12px; text-wrap:balance}
+.hero2 p{margin:0 0 20px; font-size:14px; line-height:1.6; opacity:.9}
+.hero2 .cta{display:flex; gap:10px; flex-wrap:wrap}
+.hero2 button.btn{width:auto; padding:11px 22px; border-radius:30px; background:#f6ede2; color:#3e2619}
+.hero2 button.btn.outline{background:transparent; border:1px solid #f6ede2; color:#f6ede2}
+.sec{margin:34px 0}
+.sec h3{font:500 28px/1.15 var(--display); margin:0 0 14px}
+.sec .eyebrow{color:var(--accent-dark); opacity:1}
+.story{padding:26px; border-radius:20px; background:var(--card); border:1px solid var(--border)}
+.story p{margin:0; line-height:1.75; font-size:14px; color:var(--muted)}
+.foot{text-align:center; color:var(--muted); font-size:12px; padding:24px 0 8px; border-top:1px solid var(--border); margin-top:34px}
+.feat{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px}
+.feat .card{text-align:center; padding:14px 8px; margin:0}
+.feat .icon{font-size:22px; margin-bottom:6px}
+.feat .label{font-size:11px; color:var(--muted)}
+.orderCode{background:var(--card); border:1px dashed var(--accent); border-radius:10px; padding:14px; text-align:center; margin-bottom:12px}
+.orderCode .code{font-size:20px; font-weight:700; color:var(--accent-dark); letter-spacing:1px; margin:6px 0}
+
+/* admin */
+.login{max-width:420px; margin:24px auto; text-align:center; padding:26px 20px}
+.login h2{font:500 30px/1.1 var(--display); margin:0 0 8px}
+.login p{color:var(--muted); line-height:1.6; margin:0 0 16px}
+.status{display:inline-block; font-size:12px; padding:4px 10px; border-radius:12px; border:1px solid var(--border); color:var(--muted); margin-bottom:14px}
+.status.ok{color:var(--ok); border-color:var(--ok)}
+.status.bad{color:var(--danger); border-color:var(--danger)}
+.admin-bar{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap}
+.admin-bar h2{font:500 28px/1.1 var(--display); margin:0}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.two>div{min-width:0}
+.price-preview{font-weight:700; color:var(--accent-dark); margin:-4px 0 10px; font-size:13px}
+.dropzone{display:flex; align-items:center; gap:12px; border:1px dashed var(--accent); border-radius:10px; padding:10px; margin-bottom:10px; cursor:pointer; background:var(--bg)}
+.dropzone img{width:72px; height:90px; object-fit:cover; border-radius:6px; background:var(--border); flex:none}
+.dropzone .ph{width:72px; height:90px; border-radius:6px; background:var(--border); flex:none; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center}
+.dropzone input{display:none}
+.plist-row{display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap}
+.plist-row:last-child{border-bottom:none}
+.plist-row img,.plist-row .noimg{width:48px; height:60px; object-fit:cover; border-radius:6px; background:var(--border); flex:none}
+.plist-row .info{flex:1; min-width:140px}
+.plist-row .info b{display:block; font-size:13px}
+.plist-row .acts{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.plist-row .acts input{width:110px; margin:0; padding:6px 8px; font-size:13px}
+@media (max-width:480px){ .two{grid-template-columns:1fr} .hero2 h2{font-size:32px} }
+@media (prefers-reduced-motion: reduce){ #toast{transition:none} }
+</style>
+</head>
+<body>
+<div id="toast" role="status" aria-live="polite"></div>
+<header>
+  <h1>The Myron - Fine Fragrance</h1>
+  <nav id="nav">
+    <button data-tab="beranda" class="active">Beranda</button>
+    <button data-tab="toko">Toko</button>
+    <button data-tab="keranjang">Keranjang <span id="cartCount"></span></button>
+    <button data-tab="pesanan">Lacak Pesanan</button>
+    <button data-tab="admin" id="adminTabBtn">Admin</button>
+  </nav>
+</header>
+<main>
+  <div id="view-beranda"></div>
+  <div id="view-toko" hidden></div>
+  <div id="view-keranjang" hidden></div>
+  <div id="view-pesanan" hidden></div>
+  <div id="view-admin" hidden></div>
+</main>
+<script>
+let isAdmin = false, pendingDelete = null, newFotoUrl = '', newFoto = null;
+let products = [], orders = [], settings = {};
+let cart = [];
+
+// Load data dari LocalStorage
+try { cart = JSON.parse(localStorage.getItem('cart_v2') || '[]'); } catch(e) { cart = []; }
+try { products = JSON.parse(localStorage.getItem('products_v2') || '[]'); } catch(e) { products = []; }
+try { settings = JSON.parse(localStorage.getItem('settings_v2') || '{}'); } catch(e) { settings = {}; }
+try { orders = JSON.parse(localStorage.getItem('orders_v2') || '[]'); } catch(e) { orders = []; }
+try { isAdmin = localStorage.getItem('isAdmin_v2') === 'true'; } catch(e) { isAdmin = false; }
+
+const DUMMY_USER = "admin";
+const DUMMY_PASS = "admin123";
+
+function saveCart(){ try{ localStorage.setItem('cart_v2', JSON.stringify(cart)); }catch(e){} }
+function saveProductsStorage(){ try{ localStorage.setItem('products_v2', JSON.stringify(products)); }catch(e){} }
+function saveSettingsStorage(){ try{ localStorage.setItem('settings_v2', JSON.stringify(settings)); }catch(e){} }
+function saveOrdersStorage(){ try{ localStorage.setItem('orders_v2', JSON.stringify(orders)); }catch(e){} }
+
+function fmt(n){ return 'Rp' + (Number(n)||0).toLocaleString('id-ID'); }
+function digits(s){ return Number(String(s||'').replace(/\D/g,''))||0; }
+function toast(msg){ const t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'), 2600); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function imgUrl(path){ return path ? (path.startsWith('data:') ? path : '/api/img?p='+encodeURIComponent(path)) : ''; }
+function imgSrc(p){ return imgUrl(p.imagePath); }
+function adminOpen(){ const el = document.getElementById('view-admin'); return el ? !el.hidden : false; }
+
+document.getElementById('nav').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-tab]'); if(!b) return;
+  goTab(b.dataset.tab);
+});
+
+function goTab(t){
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===t));
+  ['beranda','toko','keranjang','pesanan','admin'].forEach(n=>{ 
+    const el = document.getElementById('view-'+n);
+    if(el) el.hidden = (n !== t); 
+  });
+  if(t==='keranjang') renderKeranjang();
+  if(t==='pesanan') renderPesanan();
+  if(t==='admin'){ renderAdmin(); if(isAdmin) loadOrders(); }
+  if(t==='beranda') renderBeranda();
+  if(t==='toko') renderToko();
+  window.scrollTo(0,0);
+}
+window.goTab = goTab;
+
+/* ---------- beranda ---------- */
+function renderBeranda(){
+  const el = document.getElementById('view-beranda');
+  if(!el) return;
+  const pick = products.slice(0,4);
+  el.innerHTML = `
+    <section class="hero2">
+      ${settings.bannerPath ? `<img src="${esc(imgUrl(settings.bannerPath))}" alt="" onerror="this.style.display='none'">` : ''}
+      <div class="in">
+        <div class="eyebrow">Koleksi Pilihan</div>
+        <h2>${esc(settings.heroTitle||'The Myron - Fine Fragrance')}</h2>
+        <p>${esc(settings.heroText||'Fine Fragrance for your skin and soul')}</p>
+        <div class="cta"><button class="btn" onclick="goTab('toko')">Belanja Sekarang</button><button class="btn outline" onclick="goTab('pesanan')">Lacak Pesanan</button></div>
+      </div>
+    </section>
+    ${pick.length ? `<section class="sec"><div class="eyebrow">Terpopuler</div><h3>Produk Pilihan</h3>
+      <div class="grid">${pick.map(p=>`<div class="card prod">
+        ${imgSrc(p) ? `<img class="thumb" src="${esc(imgSrc(p))}" alt="" onerror="this.style.display='none'">` : ''}
+        <div class="name">${esc(p.name)}</div>
+        <div class="desc">${esc(p.desc||'')}</div>
+        <div class="price">${fmt(p.price)}</div>
+        <div style="margin-top:8px"><button class="btn small" onclick="window.addToCart('${esc(p.id)}')">+ Keranjang</button></div>
+      </div>`).join('')}</div></section>` : '<div class="empty">Belum ada produk unggulan. Silakan tambahkan produk via menu Admin.</div>'}
+    <section class="sec"><div class="eyebrow">Our Story</div>
+      <div class="story"><p>A fine fragrance that stays with you for up to 8 hours. One day, this scent might become part of your story. Find your personal scent with The Myron.</p><p style="margin-top:16px"><strong>Available offline at:</strong><br>📍 <a href="https://maps.app.goo.gl/EMEeFAt5sHvJFP7r7" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none">Toko 48</a></p></div></section>
+    <div class="feat">
+      <div class="card"><div class="icon">🚚</div><div class="label">Pengiriman ke seluruh Indonesia</div></div>
+      <div class="card"><div class="icon">✅</div><div class="label">Produk asli &amp; terjamin</div></div>
+      <div class="card"><div class="icon">💬</div><div class="label">Respon cepat</div></div>
+    </div>
+    <div class="foot">© The Myron - Fine Fragrance</div>`;
+}
+
+/* ---------- toko ---------- */
+function renderToko(){
+  const el = document.getElementById('view-toko');
+  if(!el) return;
+  if(!products.length){ el.innerHTML = '<div class="empty">Belum ada produk.'+(isAdmin?' Tambahkan lewat tab Admin.':'')+'</div>'; return; }
+  el.innerHTML = '<div class="grid">' + products.map(p=>`
+    <div class="card prod">
+      ${imgSrc(p) ? `<img class="thumb" src="${esc(imgSrc(p))}" alt="${esc(p.name)}" onerror="this.style.display='none'">` : ''}
+      <div class="name">${esc(p.name)}</div>
+      <div class="desc">${esc(p.desc||'')}</div>
+      <div class="price">${fmt(p.price)}</div>
+      <div style="margin-top:8px"><button class="btn small" onclick="window.addToCart('${esc(p.id)}')">+ Keranjang</button></div>
+    </div>`).join('') + '</div>';
+}
+
+window.addToCart = function(id){
+  const p = products.find(x=>x.id===id); if(!p) return;
+  const item = cart.find(c=>c.id===id);
+  if(item) item.qty++; else cart.push({id:p.id, qty:1});
+  saveCart(); updateCartCount(); toast('Ditambahkan ke keranjang');
+};
+
+function cartLines(){
+  return cart.map(c=>({c, p:products.find(x=>x.id===c.id)})).filter(x=>x.p);
+}
+
+function updateCartCount(){
+  const el = document.getElementById('cartCount');
+  if(!el) return;
+  const n = cart.reduce((s,c)=>s+c.qty,0);
+  el.textContent = n ? '('+n+')' : '';
+}
+
+/* ---------- keranjang ---------- */
+let checkoutZona = 'jbd';
+function renderKeranjang(){
+  const el = document.getElementById('view-keranjang');
+  if(!el) return;
+  const lines = cartLines();
+  if(!lines.length){ el.innerHTML='<div class="empty">Keranjang kosong. Yuk pilih produk di menu Toko atau Beranda!</div>'; return; }
+  const subtotal = lines.reduce((s,x)=>s+x.p.price*x.c.qty,0);
+  const beratGram = lines.reduce((s,x)=>s+(x.p.berat||500)*x.c.qty,0);
+  const rate = checkoutZona==='jbd' ? (settings.ongkirJbd||9000) : (settings.ongkirLuar||18000);
+  const ongkir = Math.ceil(beratGram/1000) * rate;
+  const total = subtotal + ongkir;
+  
+  el.innerHTML = lines.map(({c,p})=>`
+    <div class="card row">
+      <div style="min-width:0"><div style="font-weight:600;font-size:14px">${esc(p.name)}</div><div class="muted">${fmt(p.price)} x ${c.qty} = <b>${fmt(p.price * c.qty)}</b></div></div>
+      <div class="qty"><button onclick="window.changeQty('${esc(c.id)}',-1)" aria-label="Kurangi">−</button><span>${c.qty}</span><button onclick="window.changeQty('${esc(c.id)}',1)" aria-label="Tambah">+</button></div>
+    </div>`).join('') +
+    `<div class="card">
+      <h3>Informasi Pengiriman & Ringkasan Biaya</h3>
+      <label for="ckZona">Tujuan Pengiriman</label>
+      <select id="ckZona" onchange="window.setZona(this.value)">
+        <option value="jbd" ${checkoutZona==='jbd'?'selected':''}>Jabodetabek (Rp9.000/kg)</option>
+        <option value="luar" ${checkoutZona==='luar'?'selected':''}>Luar Jabodetabek (Rp18.000/kg)</option>
+      </select>
+      <div class="row"><span class="muted">Subtotal Produk</span><span>${fmt(subtotal)}</span></div>
+      <div class="row"><span class="muted">Estimasi Berat & Ongkir (${(beratGram/1000).toFixed(2)} kg)</span><span>${fmt(ongkir)}</span></div>
+      <div class="row" style="margin-top:6px; font-size:16px;"><b>Total Pembayaran</b><b style="color:var(--accent-dark);">${fmt(total)}</b></div>
+    </div>
+    <div class="card" id="checkoutForm">
+      <h3>Detail Penerima</h3>
+      <label for="ckNama">Nama Penerima</label><input id="ckNama" autocomplete="name" placeholder="Nama lengkap Anda">
+      <label for="ckHp">No. HP / WhatsApp</label><input id="ckHp" inputmode="tel" autocomplete="tel" placeholder="08xxxxxxxxxx">
+      <label for="ckAlamat">Alamat Lengkap</label><textarea id="ckAlamat" rows="3" autocomplete="street-address" placeholder="Nama jalan, nomor rumah, RT/RW, kecamatan, kota"></textarea>
+      <h3>Pembayaran</h3>
+      <div class="muted" style="margin-bottom:8px">${settings.bank ? `Transfer ke <b>${esc(settings.bank)}</b> <code>${esc(settings.norek)}</code> a.n <b>${esc(settings.an)}</b>` : 'Silakan transfer ke Rekening Resmi Toko (Admin belum mengatur rekening).'}</div>
+      <label for="ckRef">Catatan Transfer (opsional)</label><input id="ckRef" placeholder="mis. sudah transfer via BCA a.n Budi">
+      <label for="ckBukti">Upload Bukti Transfer (screenshot)</label><input id="ckBukti" type="file" accept="image/*">
+      <button class="btn" id="btnOrder" onclick="window.submitOrder()">Buat Pesanan Sekarang</button>
+    </div>`;
+}
+
+window.setZona = function(val){
+  checkoutZona = val;
+  renderKeranjang();
+};
+
+window.changeQty = function(id, d){
+  const c = cart.find(x=>x.id===id); if(!c) return;
+  c.qty += d;
+  if(c.qty<=0) cart = cart.filter(x=>x.id!==id);
+  saveCart(); updateCartCount(); renderKeranjang();
+};
+
+window.submitOrder = async function(){
+  const nama=document.getElementById('ckNama').value.trim();
+  const hp=document.getElementById('ckHp').value.trim();
+  const alamat=document.getElementById('ckAlamat').value.trim();
+  const ref=document.getElementById('ckRef').value.trim();
+  if(!nama||!hp||!alamat){ toast('Lengkapi data pengiriman dulu'); return; }
+  const btn=document.getElementById('btnOrder'); btn.disabled=true; btn.textContent='Mengirim Pesanan...';
+  
+  const lines = cartLines();
+  const subtotal = lines.reduce((s,x)=>s+x.p.price*x.c.qty,0);
+  const beratGram = lines.reduce((s,x)=>s+(x.p.berat||500)*x.c.qty,0);
+  const rate = checkoutZona==='jbd' ? (settings.ongkirJbd||9000) : (settings.ongkirLuar||18000);
+  const ongkir = Math.ceil(beratGram/1000) * rate;
+  const total = subtotal + ongkir;
+
+  let buktiPath = '';
+  const f = document.getElementById('ckBukti').files[0];
+  if(f){ buktiPath = await uploadImage(await compressImage(f, 1400)); }
+
+  const code = 'ORD' + Math.random().toString(36).substring(2, 9).toUpperCase();
+  const newOrd = {
+    code, nama, hp, alamat, refBayar: ref, buktiPath,
+    items: cart.map(c=>{
+      const p = products.find(x=>x.id===c.id);
+      return { name: p?p.name:'Produk', qty: c.qty, price: p?p.price:0 };
+    }),
+    total,
+    status: 'menunggu_konfirmasi',
+    createdAt: Date.now()
+  };
+  orders.push(newOrd);
+  saveOrdersStorage();
+
+  cart = []; saveCart(); updateCartCount();
+  try{ localStorage.setItem('lastOrderCode', code); }catch(e){}
+  
+  const el = document.getElementById('view-keranjang');
+  if(el){
+    el.innerHTML = `
+      <div class="orderCode">
+        <div>Pesanan berhasil dibuat! Simpan kode ini untuk melacak pesananmu:</div>
+        <div class="code">${esc(code)}</div>
+        <button class="btn small" onclick="goTab('pesanan')">Lacak Pesanan</button>
+      </div>`;
+  }
+  toast('Pesanan berhasil dibuat!');
+};
+
+/* ---------- lacak pesanan ---------- */
+const STATUS_STEPS = ['menunggu_konfirmasi','dibayar','diproses','dikirim','diterima'];
+const STATUS_LABEL = {menunggu_konfirmasi:'Menunggu Konfirmasi', dibayar:'Dibayar', diproses:'Diproses', dikirim:'Dikirim', diterima:'Diterima', batal:'Dibatalkan'};
+
+function timelineHtml(status){
+  if(status==='batal') return '<div class="badge batal">Dibatalkan</div>';
+  const idx = STATUS_STEPS.indexOf(status);
+  return '<div class="timeline">' + STATUS_STEPS.map((s,i)=>`<div class="tl-step ${i<=idx?'done':''}"><div class="dot">${i<=idx?'✓':''}</div>${STATUS_LABEL[s]}</div>`).join('') + '</div>';
+}
+
+function orderCardHtml(o){
+  return `<div class="card">
+    <div class="row"><b>${esc(o.code)}</b><span class="badge ${esc(o.status)}">${STATUS_LABEL[o.status]||esc(o.status)}</span></div>
+    <div class="muted" style="margin:6px 0">${(o.items||[]).map(i=>esc(i.name)+' x'+i.qty).join(', ')}</div>
+    <div class="row"><span class="muted">Total</span><b>${fmt(o.total)}</b></div>
+    ${timelineHtml(o.status)}
+    ${o.resi ? `<div class="row" style="margin-top:8px"><span class="muted">No. Resi: ${esc(o.resi)}</span>
+      <a class="btn small outline" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://cekresi.com/?noresi=${encodeURIComponent(o.resi)}">Lacak Paket</a></div>` : ''}
+  </div>`;
+}
+
+function renderPesanan(){
+  const el = document.getElementById('view-pesanan');
+  if(!el) return;
+  let last=''; try{ last = localStorage.getItem('lastOrderCode') || ''; }catch(e){}
+  el.innerHTML = `
+    <div class="card"><label for="lookupCode">Cek dengan Kode Pesanan</label>
+      <div class="small-input"><input id="lookupCode" value="${esc(last)}" placeholder="mis. ORD1A2B3CDE"><button class="btn small" onclick="window.lookupOrder()">Cek</button></div></div>
+    <div class="card"><label for="lookupHp">Atau Cek dengan Nomor HP (lihat semua riwayat)</label>
+      <div class="small-input"><input id="lookupHp" inputmode="tel" placeholder="mis. 08123456789"><button class="btn small" onclick="window.lookupByPhone()">Cek</button></div></div>
+    <div id="lookupResult"></div>`;
+  if(last) window.lookupOrder();
+}
+
+window.lookupByPhone = function(){
+  const hpInput = document.getElementById('lookupHp');
+  const resEl = document.getElementById('lookupResult');
+  if(!hpInput || !resEl) return;
+  const hp = hpInput.value.trim();
+  if(!hp){ resEl.innerHTML=''; return; }
+  resEl.innerHTML = '<div class="empty">Mencari...</div>';
+  const list = orders.filter(o=>o.hp === hp);
+  if(!list.length){ resEl.innerHTML='<div class="empty">Belum ada pesanan dengan nomor HP ini.</div>'; return; }
+  resEl.innerHTML = `<div class="muted" style="margin-bottom:8px">Ditemukan ${list.length} pesanan</div>` + list.map(orderCardHtml).join('');
+};
+
+window.lookupOrder = function(){
+  const codeInput = document.getElementById('lookupCode');
+  const resEl = document.getElementById('lookupResult');
+  if(!codeInput || !resEl) return;
+  const code = codeInput.value.trim().toUpperCase();
+  if(!code){ resEl.innerHTML=''; return; }
+  resEl.innerHTML = '<div class="empty">Mencari...</div>';
+  const order = orders.find(o=>o.code === code);
+  resEl.innerHTML = order ? orderCardHtml(order) : '<div class="empty">Kode pesanan tidak ditemukan.</div>';
+};
+
+/* ---------- admin: login ---------- */
+function loginHtml(){
+  return `<form class="card login" onsubmit="window.doLogin(event)">
+    <h2>Masuk Admin</h2>
+    <p>Panel ini untuk pemilik toko. Masuk dengan username dan password admin.</p>
+    <div style="background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:14px; text-align:left;">
+      <b>Akun Dummy Login:</b><br>
+      Username: <code>${DUMMY_USER}</code><br>
+      Password: <code>${DUMMY_PASS}</code>
+    </div>
+    <label for="lgUser" style="text-align:left">Username</label>
+    <input id="lgUser" autocomplete="username" autocapitalize="none" placeholder="admin">
+    <label for="lgPass" style="text-align:left">Password</label>
+    <input id="lgPass" type="password" autocomplete="current-password" placeholder="admin123">
+    <button class="btn" type="submit" id="btnLogin">Masuk</button>
+  </form>`;
+}
+
+window.doLogin = function(ev){
+  ev.preventDefault();
+  const uEl = document.getElementById('lgUser');
+  const pEl = document.getElementById('lgPass');
+  if(!uEl || !pEl) return;
+  const user = uEl.value.trim();
+  const password = pEl.value;
+  if(!user || !password){ toast('Isi username dan password'); return; }
+  
+  if(user === DUMMY_USER && password === DUMMY_PASS){
+    isAdmin = true;
+    try{ localStorage.setItem('isAdmin_v2', 'true'); }catch(e){}
+    renderAdmin();
+    renderToko();
+    toast('Berhasil masuk sebagai admin');
+  } else {
+    toast('Username atau Password salah!');
+    pEl.value = '';
+    pEl.focus();
+  }
+};
+
+window.doLogout = function(){
+  isAdmin = false;
+  try{ localStorage.removeItem('isAdmin_v2'); }catch(e){}
+  renderAdmin();
+  renderToko();
+  toast('Anda sudah keluar');
+};
+
+/* ---------- admin: panel ---------- */
+function loadOrders(){
+  if(adminOpen()) renderAdmin();
+}
+
+function productRows(){
+  if(!products.length) return '<div class="muted">Belum ada produk. Isi formulir di atas untuk menambah produk pertama.</div>';
+  return products.map(p=>`
+    <div class="plist-row">
+      ${imgSrc(p) ? `<img src="${esc(imgSrc(p))}" alt="" onerror="this.style.display='none'">` : '<div class="noimg"></div>'}
+      <div class="info"><b>${esc(p.name)}</b><span class="muted">${fmt(p.price)} · ${p.berat||500} g</span></div>
+      <div class="acts">
+        <input id="np-${esc(p.id)}" inputmode="numeric" value="${p.price}" aria-label="Harga baru">
+        <button class="btn small" onclick="window.updatePrice('${esc(p.id)}')">Ubah Harga</button>
+        ${pendingDelete===p.id
+          ? `<button class="btn small danger" onclick="window.deleteProduct('${esc(p.id)}')">Yakin hapus?</button><button class="btn small outline" onclick="pendingDelete=null;renderAdmin()">Batal</button>`
+          : `<button class="btn small outline" onclick="pendingDelete='${esc(p.id)}';renderAdmin()">Hapus</button>`}
+      </div>
+    </div>`).join('');
+}
+
+function renderAdmin(){
+  const el = document.getElementById('view-admin');
+  if(!el) return;
+  if(!isAdmin){ el.innerHTML = loginHtml(); return; }
+  const keep = id=>{ const x=document.getElementById(id); return x?x.value:''; };
+  const v = {nama:keep('pNama'), harga:keep('pHarga'), berat:keep('pBerat'), desc:keep('pDesc')};
+  
+  el.innerHTML = `
+    <div class="admin-bar"><h2>Panel Admin</h2><button class="btn small outline" onclick="window.doLogout()">Keluar</button></div>
+    <div class="card">
+      <h3>Tambah / Upload Produk</h3>
+      <label for="pNama">Nama Produk</label><input id="pNama" value="${esc(v.nama)}" placeholder="mis. The Myron Parfume 30 ml">
+      <div class="two">
+        <div><label for="pHarga">Harga (Rp)</label><input id="pHarga" inputmode="numeric" value="${esc(v.harga)}" placeholder="115000" oninput="window.pricePreview()"></div>
+        <div><label for="pBerat">Berat (gram)</label><input id="pBerat" inputmode="numeric" value="${esc(v.berat)}" placeholder="500"></div>
+      </div>
+      <div class="price-preview" id="pPrev">${v.harga ? fmt(digits(v.harga)) : ''}</div>
+      <label for="pDesc">Deskripsi Produk</label><textarea id="pDesc" rows="4" placeholder="Top Notes, Middle Notes, Base Notes">${esc(v.desc)}</textarea>
+      <label for="pFoto">Foto Produk</label>
+      <label class="dropzone" for="pFoto">
+        ${newFotoUrl ? `<img id="pFotoPrev" src="${esc(newFotoUrl)}" alt="Pratinjau foto">` : '<div class="ph">Belum ada foto</div>'}
+        <span class="muted">Ketuk untuk ambil foto dari kamera atau pilih dari galeri HP</span>
+        <input id="pFoto" type="file" accept="image/*" onchange="window.previewFoto(this)">
+      </label>
+      <button class="btn" id="btnAddProd" onclick="window.addProduct()">Simpan Produk</button>
+    </div>
+    <div class="card"><h3>Daftar Produk (${products.length})</h3>${productRows()}</div>
+    <div class="card">
+      <h3>Pengaturan Toko</h3>
+      <label for="stBank">Nama Bank</label><input id="stBank" value="${esc(settings.bank||'')}">
+      <label for="stNorek">No. Rekening</label><input id="stNorek" inputmode="numeric" value="${esc(settings.norek||'')}">
+      <label for="stAn">Atas Nama</label><input id="stAn" value="${esc(settings.an||'')}">
+      <label for="stBannerFile">Foto Banner Beranda</label><input id="stBannerFile" type="file" accept="image/*">
+      <label for="stHeroTitle">Judul Beranda</label><input id="stHeroTitle" value="${esc(settings.heroTitle||'')}" placeholder="The Myron - Fine Fragrance">
+      <label for="stHeroText">Teks Beranda</label><textarea id="stHeroText" rows="2">${esc(settings.heroText||'')}</textarea>
+      <div class="two">
+        <div><label for="stOngkirJbd">Ongkir per Kg Jabodetabek</label><input id="stOngkirJbd" inputmode="numeric" value="${esc(settings.ongkirJbd||9000)}"></div>
+        <div><label for="stOngkirLuar">Ongkir per Kg Luar Jabodetabek</label><input id="stOngkirLuar" inputmode="numeric" value="${esc(settings.ongkirLuar||18000)}"></div>
+      </div>
+      <button class="btn" onclick="window.saveSettings()">Simpan Pengaturan</button>
+    </div>
+    <div class="card">
+      <h3>Pesanan Masuk (${orders.length})</h3>
+      ${orders.map(o=>`
+        <div class="card" style="background:var(--bg)">
+          <div class="row"><b>${esc(o.code)} ·${esc(o.nama)}</b><span class="badge ${esc(o.status)}">${STATUS_LABEL[o.status]||esc(o.status)}</span></div>
+          <div class="muted">${esc(o.hp)} ·${esc(o.alamat)}</div>
+          <div class="muted">${(o.items||[]).map(i=>esc(i.name)+' x'+i.qty).join(', ')} · ${fmt(o.total)}</div>${o.refBayar ? `<div class="muted">Ref bayar: ${esc(o.refBayar)}</div>` : ''}
+          ${o.buktiPath ? `<div style="margin-top:6px"><a href="${esc(imgUrl(o.buktiPath))}" target="_blank" rel="noopener" class="btn small outline" style="display:inline-block;text-decoration:none">Lihat Bukti Transfer</a></div>` : ''}
+          <div class="small-input" style="margin-top:8px"><select id="sel-${esc(o.code)}" aria-label="Status pesanan">${STATUS_STEPS.concat(['batal']).map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${STATUS_LABEL[s]}</option>`).join('')}</select></div>
+          <div class="small-input"><input id="resi-${esc(o.code)}" placeholder="No. resi kurir" value="${esc(o.resi||'')}"><button class="btn small" onclick="window.updateOrder('${esc(o.code)}')">Simpan</button></div>
+        </div>`).join('') || '<div class="muted">Belum ada pesanan</div>'}
+    </div>`;
+}
+
+window.pricePreview = function(){
+  const hInput = document.getElementById('pHarga');
+  const pPrev = document.getElementById('pPrev');
+  if(!hInput || !pPrev) return;
+  const n = digits(hInput.value);
+  pPrev.textContent = n ? fmt(n) : '';
+};
+
+window.previewFoto = function(inp){
+  const f = inp.files && inp.files[0]; if(!f) return;
+  newFoto = f;
+  if(newFotoUrl){ try{ URL.revokeObjectURL(newFotoUrl); }catch(e){} }
+  newFotoUrl = URL.createObjectURL(f);
+  const drop = inp.closest('.dropzone');
+  if(!drop) return;
+  const old = drop.querySelector('img, .ph');
+  const im = document.createElement('img'); im.id='pFotoPrev'; im.alt='Pratinjau foto'; im.src=newFotoUrl;
+  if(old) old.replaceWith(im);
+};
+
+async function uploadImage(blob){
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function compressImage(file, max){
+  max = max||1000;
+  return new Promise(resolve=>{
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = ()=>{
+      const r = Math.min(1, max/Math.max(im.width, im.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.width*r); c.height = Math.round(im.height*r);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b=>resolve(b||file), 'image/jpeg', 0.85);
+    };
+    im.onerror = ()=>{ URL.revokeObjectURL(url); resolve(file); };
+    im.src = url;
+  });
+}
+
+window.addProduct = async function(){
+  const nEl = document.getElementById('pNama');
+  const hEl = document.getElementById('pHarga');
+  const bEl = document.getElementById('pBerat');
+  const dEl = document.getElementById('pDesc');
+  const btn = document.getElementById('btnAddProd');
+  
+  if(!nEl || !hEl) return;
+  const name = nEl.value.trim();
+  const price = digits(hEl.value);
+  const berat = bEl ? (digits(bEl.value) || 500) : 500;
+  const desc = dEl ? dEl.value.trim() : '';
+
+  if(!name){ toast('Isi nama produk'); return; }
+  if(!price){ toast('Isi harga produk'); return; }
+  
+  if(btn){ btn.disabled=true; btn.textContent='Mengunggah foto...'; }
+  try{
+    let imagePath='';
+    if(newFoto){ 
+      imagePath = await uploadImage(await compressImage(newFoto)); 
+    }
+    if(btn) btn.textContent='Menyimpan...';
+    
+    const newProd = {
+      id: 'p_' + Date.now(),
+      name, price, berat, desc,
+      imagePath,
+      createdAt: Date.now()
+    };
+    products.push(newProd);
+    saveProductsStorage();
+
+    if(newFotoUrl){ try{ URL.revokeObjectURL(newFotoUrl); }catch(e){} newFotoUrl=''; } 
+    newFoto = null;
+    
+    nEl.value=''; hEl.value=''; if(bEl) bEl.value=''; if(dEl) dEl.value='';
+    
+    renderAdmin(); renderToko(); renderBeranda();
+    toast('Produk berhasil disimpan & tampil di Beranda/Toko');
+  }catch(e){ toast('Gagal menyimpan produk'); }
+  finally { if(btn){ btn.disabled=false; btn.textContent='Simpan Produk'; } }
+};
+
+window.updatePrice = function(id){
+  const inp = document.getElementById('np-'+id);
+  if(!inp) return;
+  const price = digits(inp.value);
+  if(!price){ toast('Isi harga yang benar'); return; }
+  const p = products.find(x=>x.id===id);
+  if(p){
+    p.price = price;
+    saveProductsStorage();
+    renderAdmin(); renderToko(); renderBeranda();
+    toast('Harga diubah');
+  }
+};
+
+window.deleteProduct = function(id){
+  pendingDelete = null;
+  products = products.filter(x=>x.id!==id);
+  saveProductsStorage();
+  renderAdmin(); renderToko(); renderBeranda();
+  toast('Produk dihapus');
+};
+
+window.saveSettings = async function(){
+  try{
+    const fInput = document.getElementById('stBannerFile');
+    const f = fInput && fInput.files ? fInput.files[0] : null;
+    let bannerPath = settings.bannerPath || '';
+    if(f){ 
+      toast('Mengunggah banner...'); 
+      bannerPath = await uploadImage(await compressImage(f, 1600)); 
+    }
+    const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    settings = {
+      ...settings,
+      bank: g('stBank'),
+      norek: g('stNorek'),
+      an: g('stAn'),
+      heroTitle: g('stHeroTitle'),
+      heroText: g('stHeroText'),
+      ongkirJbd: g('stOngkirJbd'),
+      ongkirLuar: g('stOngkirLuar'),
+      bannerPath
+    };
+    saveSettingsStorage();
+    renderBeranda(); 
+    toast('Pengaturan disimpan');
+  }catch(e){ toast('Gagal menyimpan pengaturan'); }
+};
+
+window.updateOrder = function(code){
+  const sel = document.getElementById('sel-'+code);
+  const resiInp = document.getElementById('resi-'+code);
+  if(!sel) return;
+  const status = sel.value;
+  const resi = resiInp ? resiInp.value.trim() : '';
+  const o = orders.find(x=>x.code===code);
+  if(o){
+    o.status = status;
+    o.resi = resi;
+    saveOrdersStorage();
+    toast('Pesanan diperbarui');
+    loadOrders();
+  }
+};
+
+/* ---------- init ---------- */
+function init(){
+  renderBeranda(); 
+  renderToko(); 
+  updateCartCount(); 
+  renderAdmin();
+  renderToko(); 
+  renderBeranda();
+}
+init();
+</script>
+</body>
+</html>
