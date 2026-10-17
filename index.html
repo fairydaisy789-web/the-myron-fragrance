@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="id">
 <head>
@@ -6,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Myron</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap">
+<!-- SDK Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --accent:#5a3a28; --accent-dark:#3e2619; --bg:#faf6f0; --card:#fffdf9;
@@ -138,13 +139,17 @@ img.thumb{width:100%; max-width:100%; aspect-ratio:4/5; object-fit:cover; border
   <div id="view-admin" hidden></div>
 </main>
 <script>
+// ==================== KONFIGURASI SUPABASE ====================
+const SUPABASE_URL = 'https://niuibexzjpvjncxygfff.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BAubMtzly0-crR05NN8QGg_uH9JQUkH';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let isAdmin = false, pendingDelete = null, newFotoUrl = '', newFoto = null;
 let products = [], orders = [], settings = {};
 let cart = [];
 
-// Load data dari LocalStorage
+// Load data keranjang, pengaturan, & pesanan lokal
 try { cart = JSON.parse(localStorage.getItem('cart_v2') || '[]'); } catch(e) { cart = []; }
-try { products = JSON.parse(localStorage.getItem('products_v2') || '[]'); } catch(e) { products = []; }
 try { settings = JSON.parse(localStorage.getItem('settings_v2') || '{}'); } catch(e) { settings = {}; }
 try { orders = JSON.parse(localStorage.getItem('orders_v2') || '[]'); } catch(e) { orders = []; }
 try { isAdmin = localStorage.getItem('isAdmin_v2') === 'true'; } catch(e) { isAdmin = false; }
@@ -153,7 +158,6 @@ const DUMMY_USER = "admin";
 const DUMMY_PASS = "admin123";
 
 function saveCart(){ try{ localStorage.setItem('cart_v2', JSON.stringify(cart)); }catch(e){} }
-function saveProductsStorage(){ try{ localStorage.setItem('products_v2', JSON.stringify(products)); }catch(e){} }
 function saveSettingsStorage(){ try{ localStorage.setItem('settings_v2', JSON.stringify(settings)); }catch(e){} }
 function saveOrdersStorage(){ try{ localStorage.setItem('orders_v2', JSON.stringify(orders)); }catch(e){} }
 
@@ -161,9 +165,42 @@ function fmt(n){ return 'Rp' + (Number(n)||0).toLocaleString('id-ID'); }
 function digits(s){ return Number(String(s||'').replace(/\D/g,''))||0; }
 function toast(msg){ const t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'), 2600); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function imgUrl(path){ return path ? (path.startsWith('data:') ? path : '/api/img?p='+encodeURIComponent(path)) : ''; }
-function imgSrc(p){ return imgUrl(p.imagePath); }
+function imgUrl(path){ return path || ''; }
+function imgSrc(p){ return p.foto || p.imagePath || ''; }
 function adminOpen(){ const el = document.getElementById('view-admin'); return el ? !el.hidden : false; }
+
+// ==================== AMBIL DATA DARI SUPABASE (READ) ====================
+async function fetchProductsFromSupabase() {
+  try {
+    const { data, error } = await _supabase
+      .from('informasi_produk')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Gagal mengambil data produk:', error);
+      return;
+    }
+
+    if (data) {
+      products = data.map(item => ({
+        id: item.id,
+        name: item.nama_produk,
+        price: item.harga,
+        berat: item.berat,
+        desc: item.deskripsi,
+        foto: item.foto,
+        createdAt: item.created_at
+      }));
+
+      if (!document.getElementById('view-beranda').hidden) renderBeranda();
+      if (!document.getElementById('view-toko').hidden) renderToko();
+      if (!document.getElementById('view-admin').hidden) renderAdmin();
+    }
+  } catch (err) {
+    console.error('Error Supabase:', err);
+  }
+}
 
 document.getElementById('nav').addEventListener('click', e=>{
   const b = e.target.closest('button[data-tab]'); if(!b) return;
@@ -234,14 +271,14 @@ function renderToko(){
 }
 
 window.addToCart = function(id){
-  const p = products.find(x=>x.id===id); if(!p) return;
-  const item = cart.find(c=>c.id===id);
+  const p = products.find(x=>String(x.id)===String(id)); if(!p) return;
+  const item = cart.find(c=>String(c.id)===String(id));
   if(item) item.qty++; else cart.push({id:p.id, qty:1});
   saveCart(); updateCartCount(); toast('Ditambahkan ke keranjang');
 };
 
 function cartLines(){
-  return cart.map(c=>({c, p:products.find(x=>x.id===c.id)})).filter(x=>x.p);
+  return cart.map(c=>({c, p:products.find(x=>String(x.id)===String(c.id))})).filter(x=>x.p);
 }
 
 function updateCartCount(){
@@ -299,9 +336,9 @@ window.setZona = function(val){
 };
 
 window.changeQty = function(id, d){
-  const c = cart.find(x=>x.id===id); if(!c) return;
+  const c = cart.find(x=>String(x.id)===String(id)); if(!c) return;
   c.qty += d;
-  if(c.qty<=0) cart = cart.filter(x=>x.id!==id);
+  if(c.qty<=0) cart = cart.filter(x=>String(x.id)!==String(id));
   saveCart(); updateCartCount(); renderKeranjang();
 };
 
@@ -328,7 +365,7 @@ window.submitOrder = async function(){
   const newOrd = {
     code, nama, hp, alamat, refBayar: ref, buktiPath,
     items: cart.map(c=>{
-      const p = products.find(x=>x.id===c.id);
+      const p = products.find(x=>String(x.id)===String(c.id));
       return { name: p?p.name:'Produk', qty: c.qty, price: p?p.price:0 };
     }),
     total,
@@ -503,7 +540,7 @@ function renderAdmin(){
         <span class="muted">Ketuk untuk ambil foto dari kamera atau pilih dari galeri HP</span>
         <input id="pFoto" type="file" accept="image/*" onchange="window.previewFoto(this)">
       </label>
-      <button class="btn" id="btnAddProd" onclick="window.addProduct()">Simpan Produk</button>
+      <button class="btn" id="btnAddProd" onclick="window.addProduct()">Simpan Produk ke Supabase</button>
     </div>
     <div class="card"><h3>Daftar Produk (${products.length})</h3>${productRows()}</div>
     <div class="card">
@@ -579,6 +616,7 @@ function compressImage(file, max){
   });
 }
 
+// ==================== TAMBAH PRODUK KE SUPABASE (INSERT) ====================
 window.addProduct = async function(){
   const nEl = document.getElementById('pNama');
   const hEl = document.getElementById('pHarga');
@@ -597,52 +635,97 @@ window.addProduct = async function(){
   
   if(btn){ btn.disabled=true; btn.textContent='Mengunggah foto...'; }
   try{
-    let imagePath='';
+    let fotoUrl = '';
     if(newFoto){ 
-      imagePath = await uploadImage(await compressImage(newFoto)); 
+      const compressedBlob = await compressImage(newFoto);
+      const fileName = `produk_${Date.now()}.jpg`;
+      
+      const { data: uploadData, error: uploadErr } = await _supabase.storage
+        .from('produk-foto')
+        .upload(fileName, compressedBlob, { contentType: 'image/jpeg' });
+
+      if (!uploadErr && uploadData) {
+        const { data: publicUrlData } = _supabase.storage.from('produk-foto').getPublicUrl(fileName);
+        fotoUrl = publicUrlData.publicUrl;
+      } else {
+        // Fallback jika storage belum aktif/dibuat: simpan sebagai base64 string
+        fotoUrl = await uploadImage(compressedBlob);
+      }
     }
-    if(btn) btn.textContent='Menyimpan...';
+
+    if(btn) btn.textContent='Menyimpan ke Supabase...';
     
-    const newProd = {
-      id: 'p_' + Date.now(),
-      name, price, berat, desc,
-      imagePath,
-      createdAt: Date.now()
-    };
-    products.push(newProd);
-    saveProductsStorage();
+    const { data, error } = await _supabase
+      .from('informasi_produk')
+      .insert([
+        {
+          nama_produk: name,
+          harga: price,
+          berat: berat,
+          deskripsi: desc,
+          foto: fotoUrl
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Error insert Supabase:', error);
+      toast('Gagal menyimpan ke Supabase!');
+      return;
+    }
 
     if(newFotoUrl){ try{ URL.revokeObjectURL(newFotoUrl); }catch(e){} newFotoUrl=''; } 
     newFoto = null;
     
     nEl.value=''; hEl.value=''; if(bEl) bEl.value=''; if(dEl) dEl.value='';
     
-    renderAdmin(); renderToko(); renderBeranda();
-    toast('Produk berhasil disimpan & tampil di Beranda/Toko');
-  }catch(e){ toast('Gagal menyimpan produk'); }
-  finally { if(btn){ btn.disabled=false; btn.textContent='Simpan Produk'; } }
+    await fetchProductsFromSupabase();
+    toast('Produk berhasil disimpan ke Supabase!');
+  }catch(e){ 
+    console.error(e);
+    toast('Gagal menyimpan produk'); 
+  } finally { 
+    if(btn){ btn.disabled=false; btn.textContent='Simpan Produk ke Supabase'; } 
+  }
 };
 
-window.updatePrice = function(id){
+// ==================== UPDATE HARGA DI SUPABASE ====================
+window.updatePrice = async function(id){
   const inp = document.getElementById('np-'+id);
   if(!inp) return;
   const price = digits(inp.value);
   if(!price){ toast('Isi harga yang benar'); return; }
-  const p = products.find(x=>x.id===id);
-  if(p){
-    p.price = price;
-    saveProductsStorage();
-    renderAdmin(); renderToko(); renderBeranda();
-    toast('Harga diubah');
+  
+  const { error } = await _supabase
+    .from('informasi_produk')
+    .update({ harga: price })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Gagal memperbarui harga:', error);
+    toast('Gagal mengedit harga');
+  } else {
+    await fetchProductsFromSupabase();
+    toast('Harga berhasil diperbarui');
   }
 };
 
-window.deleteProduct = function(id){
+// ==================== HAPUS PRODUK DI SUPABASE ====================
+window.deleteProduct = async function(id){
   pendingDelete = null;
-  products = products.filter(x=>x.id!==id);
-  saveProductsStorage();
-  renderAdmin(); renderToko(); renderBeranda();
-  toast('Produk dihapus');
+  
+  const { error } = await _supabase
+    .from('informasi_produk')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Gagal menghapus produk:', error);
+    toast('Gagal menghapus produk');
+  } else {
+    await fetchProductsFromSupabase();
+    toast('Produk berhasil dihapus');
+  }
 };
 
 window.saveSettings = async function(){
@@ -689,13 +772,12 @@ window.updateOrder = function(code){
 };
 
 /* ---------- init ---------- */
-function init(){
+async function init(){
+  await fetchProductsFromSupabase();
   renderBeranda(); 
   renderToko(); 
   updateCartCount(); 
   renderAdmin();
-  renderToko(); 
-  renderBeranda();
 }
 init();
 </script>
