@@ -315,7 +315,7 @@
     ];
 
     let state = {
-      products: DEFAULT_PRODUCTS,
+      products: [],
       shippingRates: JSON.parse(localStorage.getItem('myron_shipping')) || PROVINCES,
       cart: JSON.parse(localStorage.getItem('myron_cart')) || [],
       orders: JSON.parse(localStorage.getItem('myron_orders')) || [],
@@ -342,7 +342,11 @@
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.warn('Gagal mengambil data produk dari Supabase (Menggunakan data produk default):', error.message);
+          console.error('Gagal mengambil produk dari Supabase:', error.message);
+          // Jangan menampilkan katalog contoh seolah-olah produk database.
+          state.products = [];
+          renderCurrentView();
+          showToast('Produk belum bisa dibaca dari Supabase: ' + error.message, 'error');
           return;
         }
 
@@ -372,14 +376,17 @@
               size: '30ml / 1.0 fl.oz.'
             };
           });
-        } else if (data && data.length === 0) {
-          // Tabel kosong -> tetap pakai produk contoh agar toko tidak kosong
-          state.products = DEFAULT_PRODUCTS;
+        } else {
+          // Hanya tampilkan produk nyata dari database, bukan produk contoh.
+          state.products = [];
         }
 
         renderCurrentView();
       } catch (err) {
-        console.warn('Koneksi Supabase error:', err);
+        console.error('Koneksi Supabase error:', err);
+        state.products = [];
+        renderCurrentView();
+        showToast('Gagal memuat produk: ' + (err.message || err), 'error');
       }
     }
 
@@ -951,6 +958,7 @@
 
       btn.disabled = true;
       btn.innerText = 'Mengunggah & Menyimpan...';
+      let insertedProductId = null;
       try {
         // Tabel product_information hanya menerima kolom yang memang ada di database.
         const { data: inserted, error: insertErr } = await _supabase
@@ -959,6 +967,7 @@
           .select('id')
           .single();
         if (insertErr) throw new Error('Gagal simpan produk: ' + insertErr.message);
+        insertedProductId = inserted.id;
 
         let fotoUrl = null;
         if (fileInput.files && fileInput.files[0]) fotoUrl = await uploadProductPhoto(fileInput.files[0]);
@@ -977,7 +986,18 @@
         renderCurrentView();
       } catch (err) {
         console.error(err);
-        showToast(err.message || 'Terjadi kesalahan sistem', 'error');
+        // Kalau baris produk utama sudah tersimpan, muat ulang katalog walau foto/metadata gagal.
+        if (insertedProductId) {
+          await fetchProductsFromSupabase();
+          renderCurrentView();
+          showToast('Produk sudah tersimpan dan ditampilkan, tetapi foto/kategori mungkin belum tersimpan: ' + (err.message || err), 'error');
+          const form = document.querySelector('form[onsubmit="handleAddProductSupabase(event)"]');
+          if (form) form.reset();
+          const catInput = document.getElementById('new-p-cat');
+          if (catInput) catInput.value = 'Eau de Parfum';
+        } else {
+          showToast(err.message || 'Terjadi kesalahan sistem', 'error');
+        }
       } finally {
         const b = document.getElementById('btn-save-prod');
         if (b) { b.disabled = false; b.innerText = 'Simpan ke Database'; }
