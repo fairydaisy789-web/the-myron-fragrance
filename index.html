@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -224,6 +225,7 @@
   <script>
     // ==================== KONFIGURASI SUPABASE ====================
     const SUPABASE_URL = 'https://lemmkqxhlvoxmaxbakgs.supabase.co';
+    // Masukkan Supabase ANON KEY / PUBLIC KEY Anda yang valid di sini:
     const SUPABASE_KEY = 'sb_publishable_6e9Uno0cKYI2dhOtJzSXrA_ohLXI6lP';
     
     let _supabase = null;
@@ -233,6 +235,7 @@
       console.warn("Gagal inisialisasi Supabase client:", e);
     }
 
+    // Default Fallback Products jika API key belum dikonfigurasi atau bermasalah
     const DEFAULT_PRODUCTS = [
       {
         id: '1',
@@ -339,7 +342,7 @@
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.warn('Gagal mengambil data produk dari Supabase:', error.message);
+          console.warn('Gagal mengambil data produk dari Supabase (Menggunakan data produk default):', error.message);
           return;
         }
 
@@ -438,7 +441,7 @@
             </div>
             <div class="p-6 border border-sand-200/80 bg-sand-50 rounded-sm">
               <div class="text-gold text-2xl mb-3"><i class="fa-solid fa-truck-fast"></i></div>
-              <h3 class="font-serif-title text-xl font-semibold tracking-wide text-wood-900 mb-2">Pengiriman ke Seluruh Indonesia</h3>
+              <h3 class="font-serif-title text-xl font-semibold tracking-wide text-wood-900 mb-2">Pengiriman ke Seluruh Indonesia </h3>
               <p class="text-xs text-wood-500 font-light">Layanan pengiriman aman bergaransi ke seluruh pelosok Indonesia.</p>
             </div>
           </div>
@@ -489,7 +492,7 @@
       return `
         <div class="bg-white border border-sand-200 rounded-sm overflow-hidden group hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
           <div>
-            <div class="relative overflow-hidden bg-sand-100 aspect-square cursor-pointer" onclick="navigate('product-detail', '${product.id}')">
+            <div class="relative overflow-hidden bg-sand-100 aspect-square cursor-pointer" onclick="navigate('product-detail', ${product.id})">
               <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='watermarked_img_16090007311171389226.jpg'">
               <span class="absolute top-3 right-3 bg-wood-900/80 backdrop-blur-sm text-gold text-[10px] uppercase font-semibold px-2.5 py-1 tracking-wider border border-gold/30">
                 ${product.category}
@@ -501,7 +504,7 @@
                 <span>${product.size}</span>
                 <span><i class="fa-solid fa-star text-xs"></i> ${product.rating}</span>
               </div>
-              <h3 class="font-serif-title text-xl font-bold text-wood-900 tracking-wide cursor-pointer hover:text-gold transition-colors" onclick="navigate('product-detail', '${product.id}')">
+              <h3 class="font-serif-title text-xl font-bold text-wood-900 tracking-wide cursor-pointer hover:text-gold transition-colors" onclick="navigate('product-detail', ${product.id})">
                 ${product.name}
               </h3>
               <p class="text-xs text-wood-500 italic mt-1 line-clamp-1">${product.notes}</p>
@@ -730,13 +733,124 @@
               <p class="text-xs text-gold-dark font-semibold">Terkoneksi ke Tabel Supabase: product_information</p>
             </div>
             <button onclick="handleAdminLogout()" class="px-4 py-2 bg-red-800 text-white text-xs uppercase tracking-wider rounded font-semibold hover:bg-red-900">
-              Keluar Admin
-            </button>
-          </div>
+          Keluar Admin
+        </button>
+      </div>
+
+      <div class="flex border-b border-sand-300 mb-6 space-x-6 text-xs uppercase font-semibold">
+        <button onclick="switchAdminTab('products')" id="tab-btn-products" class="pb-2 border-b-2 border-wood-900 text-wood-900">Daftar Produk Supabase</button>
+        <button onclick="switchAdminTab('shipping')" id="tab-btn-shipping" class="pb-2 border-b-2 border-transparent text-wood-500 hover:text-wood-900">Tarif Ongkir </button>
+        <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="pb-2 border-b-2 border-transparent text-wood-500 hover:text-wood-900">Daftar Pesanan</button>
+      </div>
+
+      <!-- Section Products (Supabase) -->
+      <div id="admin-section-products">
+        <div class="bg-white p-6 border border-sand-200 rounded mb-8 space-y-4">
+          <h3 class="font-serif-title text-xl font-bold text-wood-900 border-b pb-2">Tambah Produk Baru</h3>
+          <form onsubmit="handleAddProductSupabase(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Nama Produk / Varian</label>
+              <input type="text" id="new-p-name" required class="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Harga (Rp)</label>
+              <input type="number" id="new-p-price" required class="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Kategori</label>
+              <input type="text" id="new-p-cat" value="Eau de Parfum" class="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Upload Foto Produk</label>
+              <input type="file" id="new-p-imgfile" accept="image/*" class="w-full px-3 py-1 bg-sand-50 border border-sand-300 rounded">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-wood-800 mb-1 font-semibold">Deskripsi / Aroma Notes</label>
+              <textarea id="new-p-desc" rows="2" class="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded" placeholder="Top notes, middle notes, base notes..."></textarea>
+            </div>
+            <div class="sm:col-span-2">
+              <button type="submit" id="btn-save-prod" class="py-3 px-6 bg-wood-900 text-gold font-serif-title text-xs uppercase tracking-widest font-semibold rounded hover:bg-gold hover:text-wood-900 transition-all">
+                Simpan ke Database
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <h3 class="font-serif-title text-xl font-bold text-wood-900 mb-4">Katalog Produk (${state.products.length})</h3>
+        <div class="bg-white border border-sand-200 rounded overflow-x-auto">
+          <table class="w-full text-left text-xs text-wood-800">
+            <thead class="bg-sand-100 uppercase text-wood-900 font-semibold border-b border-sand-200">
+              <tr>
+                <th class="p-3">Foto</th>
+                <th class="p-3">Nama Parfum</th>
+                <th class="p-3">Kategori</th>
+                <th class="p-3">Harga</th>
+                <th class="p-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-sand-200">
+              ${state.products.map(p => `
+                <tr>
+                  <td class="p-3"><img src="${p.image}" class="w-12 h-12 object-cover rounded border" onerror="this.src='watermarked_img_16090007311171389226.jpg'"></td>
+                  <td class="p-3 font-semibold text-wood-900">${p.name}</td>
+                  <td class="p-3">${p.category}</td>
+                  <td class="p-3">Rp ${p.price.toLocaleString('id-ID')}</td>
+                  <td class="p-3 text-right space-x-2">
+                    <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1 bg-wood-900 text-gold rounded font-semibold hover:bg-gold hover:text-wood-900">Edit</button>
+                    <button onclick="deleteProductSupabase('${p.id}')" class="px-3 py-1 bg-red-800 text-white rounded font-semibold hover:bg-red-900">Hapus</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL EDIT PRODUK -->
+      <div id="edit-product-modal" class="fixed inset-0 bg-wood-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-sand-50 border border-gold/40 rounded-lg max-w-lg w-full p-6 shadow-2xl relative">
+          <button onclick="closeEditProductModal()" class="absolute top-4 right-4 text-wood-800 hover:text-gold">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+          <h3 class="font-serif-title text-xl font-bold text-wood-900 border-b pb-2 mb-4 uppercase">Edit Detail & Foto Produk</h3>
+          <form onsubmit="handleUpdateProductSupabase(event)" class="space-y-3 text-xs">
+            <input type="hidden" id="edit-p-id">
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Nama Produk</label>
+              <input type="text" id="edit-p-name" required class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Harga (Rp)</label>
+              <input type="number" id="edit-p-price" required class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Kategori</label>
+              <input type="text" id="edit-p-cat" class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Ganti Foto Produk (Opsional)</label>
+              <input type="file" id="edit-p-imgfile" accept="image/*" class="w-full px-3 py-1 bg-white border border-sand-300 rounded">
+              <p class="text-[10px] text-wood-500 mt-1">Biarkan kosong jika tidak ingin mengubah foto saat ini.</p>
+            </div>
+            <div>
+              <label class="block text-wood-800 mb-1 font-semibold">Deskripsi / Aroma Notes</label>
+              <textarea id="edit-p-desc" rows="3" class="w-full px-3 py-2 bg-white border border-sand-300 rounded"></textarea>
+            </div>
+            <div class="pt-2 flex gap-2">
+              <button type="submit" id="btn-update-prod" class="flex-1 py-3 bg-wood-900 text-gold font-serif-title text-xs uppercase tracking-widest font-semibold rounded hover:bg-gold hover:text-wood-900 transition-all">
+                Simpan Perubahan
+              </button>
+              <button type="button" onclick="closeEditProductModal()" class="px-4 py-3 bg-sand-200 text-wood-900 font-semibold rounded">
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
           <div class="flex border-b border-sand-300 mb-6 space-x-6 text-xs uppercase font-semibold">
             <button onclick="switchAdminTab('products')" id="tab-btn-products" class="pb-2 border-b-2 border-wood-900 text-wood-900">Daftar Produk Supabase</button>
-            <button onclick="switchAdminTab('shipping')" id="tab-btn-shipping" class="pb-2 border-b-2 border-transparent text-wood-500 hover:text-wood-900">Tarif Ongkir</button>
+            <button onclick="switchAdminTab('shipping')" id="tab-btn-shipping" class="pb-2 border-b-2 border-transparent text-wood-500 hover:text-wood-900">Tarif Ongkir </button>
             <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="pb-2 border-b-2 border-transparent text-wood-500 hover:text-wood-900">Daftar Pesanan</button>
           </div>
 
@@ -758,7 +872,7 @@
                   <input type="text" id="new-p-cat" value="Eau de Parfum" class="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded">
                 </div>
                 <div>
-                  <label class="block text-wood-800 mb-1 font-semibold">Upload Foto Produk (Opsional)</label>
+                  <label class="block text-wood-800 mb-1 font-semibold">Upload Foto Produk</label>
                   <input type="file" id="new-p-imgfile" accept="image/*" class="w-full px-3 py-1 bg-sand-50 border border-sand-300 rounded">
                 </div>
                 <div class="sm:col-span-2">
@@ -788,13 +902,12 @@
                 <tbody class="divide-y divide-sand-200">
                   ${state.products.map(p => `
                     <tr>
-                      <td class="p-3"><img src="${p.image}" class="w-12 h-12 object-cover rounded border" onerror="this.src='watermarked_img_16090007311171389226.jpg'"></td>
+                      <td class="p-3"><img src="${p.image}" class="w-12 h-12 object-cover rounded border"></td>
                       <td class="p-3 font-semibold text-wood-900">${p.name}</td>
                       <td class="p-3">${p.category}</td>
                       <td class="p-3">Rp ${p.price.toLocaleString('id-ID')}</td>
-                      <td class="p-3 text-right space-x-2">
-                        <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1 bg-wood-900 text-gold rounded font-semibold hover:bg-gold hover:text-wood-900">Edit</button>
-                        <button onclick="deleteProductSupabase('${p.id}')" class="px-3 py-1 bg-red-800 text-white rounded font-semibold hover:bg-red-900">Hapus</button>
+                      <td class="p-3 text-right">
+                        <button onclick="deleteProductSupabase('${p.id}')" class="text-red-700 hover:underline">Hapus</button>
                       </td>
                     </tr>
                   `).join('')}
@@ -805,7 +918,7 @@
 
           <!-- Section Shipping -->
           <div id="admin-section-shipping" class="hidden">
-            <h3 class="font-serif-title text-xl font-bold text-wood-900 mb-4">Pengaturan Tarif Ongkir</h3>
+            <h3 class="font-serif-title text-xl font-bold text-wood-900 mb-4">Pengaturan Tarif Ongkir </h3>
             <div class="bg-white border border-sand-200 rounded overflow-x-auto">
               <table class="w-full text-left text-xs text-wood-800">
                 <thead class="bg-sand-100 uppercase text-wood-900 font-semibold border-b border-sand-200">
@@ -855,48 +968,6 @@
       `;
     }
 
-    <!-- MODAL EDIT PRODUK -->
-    <div id="edit-product-modal" class="fixed inset-0 bg-wood-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-      <div class="bg-sand-50 border border-gold/40 rounded-lg max-w-lg w-full p-6 shadow-2xl relative">
-        <button onclick="closeEditProductModal()" class="absolute top-4 right-4 text-wood-800 hover:text-gold">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-        <h3 class="font-serif-title text-xl font-bold text-wood-900 border-b pb-2 mb-4 uppercase">Edit Detail & Foto Produk</h3>
-        <form onsubmit="handleUpdateProductSupabase(event)" class="space-y-3 text-xs">
-          <input type="hidden" id="edit-p-id">
-          <div>
-            <label class="block text-wood-800 mb-1 font-semibold">Nama Produk</label>
-            <input type="text" id="edit-p-name" required class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
-          </div>
-          <div>
-            <label class="block text-wood-800 mb-1 font-semibold">Harga (Rp)</label>
-            <input type="number" id="edit-p-price" required class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
-          </div>
-          <div>
-            <label class="block text-wood-800 mb-1 font-semibold">Kategori</label>
-            <input type="text" id="edit-p-cat" class="w-full px-3 py-2 bg-white border border-sand-300 rounded">
-          </div>
-          <div>
-            <label class="block text-wood-800 mb-1 font-semibold">Ganti Foto Produk (Opsional)</label>
-            <input type="file" id="edit-p-imgfile" accept="image/*" class="w-full px-3 py-1 bg-white border border-sand-300 rounded">
-            <p class="text-[10px] text-wood-500 mt-1">Biarkan kosong jika tidak ingin mengubah foto.</p>
-          </div>
-          <div>
-            <label class="block text-wood-800 mb-1 font-semibold">Deskripsi / Aroma Notes</label>
-            <textarea id="edit-p-desc" rows="3" class="w-full px-3 py-2 bg-white border border-sand-300 rounded"></textarea>
-          </div>
-          <div class="pt-2 flex gap-2">
-            <button type="submit" id="btn-update-prod" class="flex-1 py-3 bg-wood-900 text-gold font-serif-title text-xs uppercase tracking-widest font-semibold rounded hover:bg-gold hover:text-wood-900 transition-all">
-              Simpan Perubahan
-            </button>
-            <button type="button" onclick="closeEditProductModal()" class="px-4 py-3 bg-sand-200 text-wood-900 font-semibold rounded">
-              Batal
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     // --- ACTION & SUPABASE HANDLERS ---
     async function handleAddProductSupabase(e) {
       e.preventDefault();
@@ -913,7 +984,7 @@
       }
 
       btn.disabled = true;
-      btn.innerText = 'Menyimpan ke Supabase...';
+      btn.innerText = 'Mengunggah & Menyimpan ke Supabase...';
 
       let fotoUrl = 'watermarked_img_16090007311171389226.jpg';
 
@@ -922,20 +993,20 @@
           const file = fileInput.files[0];
           const fileName = `produk_${Date.now()}.jpg`;
           
-          if (_supabase) {
-            const { data: uploadData, error: uploadErr } = await _supabase.storage
-              .from('produk-foto')
-              .upload(fileName, file, { contentType: file.type });
+          const { data: uploadData, error: uploadErr } = await _supabase.storage
+            .from('produk-foto')
+            .upload(fileName, file, { contentType: file.type });
 
-            if (!uploadErr && uploadData) {
-              const { data: urlData } = _supabase.storage.from('produk-foto').getPublicUrl(fileName);
-              fotoUrl = urlData.publicUrl;
-            } else {
-              fotoUrl = await toBase64(file);
-            }
+          if (!uploadErr && uploadData) {
+            const { data: urlData } = _supabase.storage.from('produk-foto').getPublicUrl(fileName);
+            fotoUrl = urlData.publicUrl;
+          } else {
+            // Fallback base64 jika storage bucket belum disetup
+            fotoUrl = await toBase64(file);
           }
         }
 
+        // Insert ke tabel product_information
         const { error: insertErr } = await _supabase
           .from('product_information')
           .insert([
@@ -949,38 +1020,19 @@
           ]);
 
         if (insertErr) {
-          throw insertErr;
+          console.error('Error insert Supabase:', insertErr);
+          showToast('Gagal menyimpan ke tabel product_information', 'error');
+        } else {
+          showToast('Produk berhasil disimpan ke Supabase!');
+          document.getElementById('new-p-name').value = '';
+          document.getElementById('new-p-price').value = '';
+          document.getElementById('new-p-desc').value = '';
+          fileInput.value = '';
+          await fetchProductsFromSupabase();
         }
-
-        showToast('Produk berhasil disimpan ke Supabase!');
-        document.getElementById('new-p-name').value = '';
-        document.getElementById('new-p-price').value = '';
-        document.getElementById('new-p-desc').value = '';
-        if(fileInput) fileInput.value = '';
-        
-        await fetchProductsFromSupabase();
-
       } catch (err) {
-        console.warn('Gagal insert ke Supabase, menyimpan lokal:', err);
-        const localProd = {
-          id: 'local_' + Date.now(),
-          name: name,
-          category: category,
-          price: price,
-          notes: desc,
-          description: desc,
-          image: fotoUrl,
-          rating: 5.0,
-          size: '30ml / 1.0 fl.oz.'
-        };
-
-        state.products.unshift(localProd);
-        showToast('Tersimpan di Lokal (Offline Mode)');
-        document.getElementById('new-p-name').value = '';
-        document.getElementById('new-p-price').value = '';
-        document.getElementById('new-p-desc').value = '';
-        renderCurrentView();
-
+        console.error(err);
+        showToast('Terjadi kesalahan sistem', 'error');
       } finally {
         btn.disabled = false;
         btn.innerText = 'Simpan ke Tabel product_information';
@@ -988,9 +1040,9 @@
     }
 
     async function deleteProductSupabase(id) {
-      if (!confirm('Hapus produk ini?')) return;
+      if (!confirm('Hapus produk ini dari Supabase?')) return;
       try {
-        if (_supabase && !String(id).startsWith('local_')) {
+        if (_supabase) {
           await _supabase.from('product_information').delete().eq('id', id);
         }
         state.products = state.products.filter(p => String(p.id) !== String(id));
@@ -1001,6 +1053,7 @@
       }
     }
 
+    // --- FITUR EDIT PRODUK & UPDATE SUPABASE ---
     function openEditProductModal(id) {
       const product = state.products.find(p => String(p.id) === String(id));
       if (!product) return;
@@ -1056,8 +1109,8 @@
           }
         }
 
-        if (_supabase && !String(id).startsWith('local_')) {
-          await _supabase
+        if (_supabase) {
+          const { error: updateErr } = await _supabase
             .from('product_information')
             .update({
               nama_produk: name,
@@ -1067,8 +1120,13 @@
               foto: fotoUrl
             })
             .eq('id', id);
+
+          if (updateErr) {
+            console.error('Error update Supabase:', updateErr);
+          }
         }
 
+        // Update local state
         const index = state.products.findIndex(p => String(p.id) === String(id));
         if (index !== -1) {
           state.products[index] = {
